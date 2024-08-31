@@ -11,7 +11,7 @@ const MyBookings = () => {
 
   useEffect(() => {
     axios
-      .get(url)
+      .get(url, { withCredentials: true })
       .then((res) => {
         setMyBookings(res.data);
       })

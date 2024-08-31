@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -6,6 +8,7 @@ import {
 } from "firebase/auth";
 import { createContext, useEffect, useState } from "react";
 import auth from "../Firebase/firebase.config";
+import axios from "axios";
 
 export const AuthContext = createContext(null);
 
@@ -31,13 +34,33 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log("User info in onAuthStateChanged", currentUser);
+      const userEmail = currentUser?.email || user?.email;
+      const loggedUser = { email: userEmail };
       setUser(currentUser);
       setLoading(false);
+
+      if (currentUser) {
+        axios
+          .post("http://localhost:5000/jwt", loggedUser, {
+            withCredentials: true,
+          })
+          .then((res) => {
+            console.log("token issue done : ", res.data);
+          });
+      } else {
+        axios
+          .post("http://localhost:5000/logout", loggedUser, {
+            withCredentials: true,
+          })
+          .then((res) => {
+            console.log(res.data);
+          });
+      }
     });
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [user]);
 
   const authInfo = {
     createUser,
@@ -51,5 +74,7 @@ const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={authInfo}>{children}</AuthContext.Provider>
   );
 };
-
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 export default AuthProvider;
